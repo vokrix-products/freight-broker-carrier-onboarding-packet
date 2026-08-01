@@ -58,3 +58,5 @@ python3 run_demo.py
 Dashboard: https://freight-broker-carrier-onboarding-packet.vokrix.co
 Vercel: freight-broker-carrier-onboarding-packet
 Railway: 31ed37a4-5d0e-423d-b868-f1f8fc8a38ed
+Railway: freight-broker-carrier-onboarding-packet
+Railway: freight-broker-carrier-onboarding-packet
