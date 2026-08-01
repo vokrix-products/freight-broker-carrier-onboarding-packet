@@ -66,3 +66,4 @@ Landing: https://vokrix.co/freight-broker-carrier-onboarding-packet
 
 
 Stripe price ID patched in builds table: price_1Tzkji2c9uGCcgMS92ameXI7
+chore: record railway and stripe infra IDs
