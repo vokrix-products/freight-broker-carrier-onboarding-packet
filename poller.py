@@ -20,7 +20,7 @@ def poll_jobs():
 
 def download_file(bucket, path):
     url = f"{SUPABASE_URL}/storage/v1/object/{bucket}/{path}"
-    r = requests.get(url, headers={"Authorization": f"Bearer {SUPABASE_SERVICE_KEY}"})
+    r = requests.get(url, headers={"Authorization": f"Bearer {SUPABASE_SERVICE_KEY}", "apikey": SUPABASE_SERVICE_KEY})
     r.raise_for_status()
     return r.content
 
