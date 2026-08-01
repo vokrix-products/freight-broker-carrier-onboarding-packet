@@ -63,3 +63,6 @@ Railway: freight-broker-carrier-onboarding-packet
 Cloudflare: freight-broker-carrier-onboarding-packet.vokrix.co
 
 Landing: https://vokrix.co/freight-broker-carrier-onboarding-packet
+
+
+Stripe price ID patched in builds table: price_1Tzkji2c9uGCcgMS92ameXI7
