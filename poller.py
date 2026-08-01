@@ -26,7 +26,7 @@ def download_file(bucket, path):
 
 def upload_file(bucket, path, data):
     url = f"{SUPABASE_URL}/storage/v1/object/{bucket}/{path}"
-    r = requests.post(url, headers={"Authorization": f"Bearer {SUPABASE_SERVICE_KEY}"}, files={"file": data})
+    r = requests.put(url, headers={"Authorization": f"Bearer {SUPABASE_SERVICE_KEY}", "apikey": SUPABASE_SERVICE_KEY}, data=data)
     r.raise_for_status()
 
 def update_job(job_id, status, result_summary=None, output_file_path=None):
@@ -60,7 +60,7 @@ while True:
                 result = process_file(content)  # processor returns list of record dicts
                 # upload result file
                 result_data = json.dumps(result).encode()
-                output_path = f"results/{job['id']}.json"
+                output_path = f"{job['id']}.json"
                 upload_file("results", output_path, result_data)
                 # write records
                 records = []
