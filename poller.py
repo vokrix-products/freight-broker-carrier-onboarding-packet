@@ -46,7 +46,7 @@ def write_records(records):
     r = requests.post(url, headers=HEADERS, json=records)
     r.raise_for_status()
 
-from processor import process
+from processor import process_file
 
 while True:
     jobs = poll_jobs()
@@ -57,7 +57,7 @@ while True:
                 # download input file
                 content = download_file("uploads", job["source_file_path"])
                 # run processor
-                result = process(content)  # processor returns list of record dicts
+                result = process_file(content)  # processor returns list of record dicts
                 # upload result file
                 result_data = json.dumps(result).encode()
                 output_path = f"results/{job['id']}.json"
