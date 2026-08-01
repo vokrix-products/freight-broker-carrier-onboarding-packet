@@ -55,7 +55,7 @@ while True:
         for job in jobs:
             try:
                 # download input file
-                content = download_file("uploads", job["source_file_path"])
+                content = download_file("uploads", job["input_file_path"])
                 # run processor
                 result = process_file(content)  # processor returns list of record dicts
                 # upload result file
@@ -71,7 +71,7 @@ while True:
                         "title": rec.get("title", "N/A"),
                         "status": rec.get("status", "unknown"),
                         "details": rec.get("details", {}),
-                        "source_file_path": job["source_file_path"],
+                        "source_file_path": job["input_file_path"],
                         "due_date": rec.get("due_date"),
                     })
                 if records:
