@@ -61,3 +61,5 @@ Railway: 31ed37a4-5d0e-423d-b868-f1f8fc8a38ed
 Railway: freight-broker-carrier-onboarding-packet
 Railway: freight-broker-carrier-onboarding-packet
 Cloudflare: freight-broker-carrier-onboarding-packet.vokrix.co
+
+Landing: https://vokrix.co/freight-broker-carrier-onboarding-packet
