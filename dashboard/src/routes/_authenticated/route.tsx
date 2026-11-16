@@ -10,17 +10,6 @@ export const Route = createFileRoute('/_authenticated')({
       throw redirect({ to: '/sign-up' })
     }
     await syncAuthFromSession()
-    // Cross-product login guard: if user is paid for a different product, sign out
-    const { data: sessionData } = await supabase.auth.getSession()
-    if (sessionData.session) {
-      const meta = sessionData.session.user.app_metadata
-      const userProductId = meta.product_id ?? ''
-      const thisProductId = import.meta.env.VITE_PRODUCT_ID as string
-      if (userProductId && userProductId !== thisProductId) {
-        await supabase.auth.signOut()
-        throw redirect({ to: '/sign-up' })
-      }
-    }
     // Fire welcome email once per user (magic link confirmation)
     const welcomeKey = `welcome_sent_${data.session.user.email}`
     if (!localStorage.getItem(welcomeKey)) {
