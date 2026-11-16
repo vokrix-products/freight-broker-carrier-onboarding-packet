@@ -1,4 +1,3 @@
-import { useEffect, useState } from 'react'
 import {
   Card,
   CardContent,
@@ -12,13 +11,10 @@ import { ProfileDropdown } from '@/components/profile-dropdown'
 import { Search } from '@/components/search'
 import { ThemeSwitch } from '@/components/theme-switch'
 import { JobsCard } from '@/features/jobs/components/jobs-card'
-import { PRODUCT_ARCHETYPE } from '@/product-config'
-import { ReportCard } from './components/report-card'
 import { Overview } from './components/overview'
 import { RecentActivity } from './components/recent-activity'
 import { UpcomingExpirations } from './components/upcoming-expirations'
 import { useDashboardStats } from './data/dashboard'
-import { supabase } from '@/lib/supabase'
 import { Skeleton } from '@/components/ui/skeleton'
 import { NumberTicker } from '@/components/magicui/number-ticker'
 
@@ -34,25 +30,8 @@ function Trend({ current, previous }: { current: number; previous: number }) {
   )
 }
 
-// PRODUCT_CUSTOMIZE: card titles/icons below describe generic record
-// tracking. Rename "Records" / "Needs Attention" to match this product's
-// domain (e.g. "Certificates" / "Expired").
 export function Dashboard() {
   const { data, isLoading } = useDashboardStats()
-  const [showUpgradeBanner, setShowUpgradeBanner] = useState(false)
-
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search)
-    if (params.get('upgraded') === 'true') {
-      window.history.replaceState({}, '', window.location.pathname)
-      setTimeout(() => setShowUpgradeBanner(true), 0)
-    }
-  }, [])
-
-  async function handleRefreshSession() {
-    await supabase.auth.refreshSession()
-    window.location.reload()
-  }
 
   return (
     <>
@@ -65,27 +44,15 @@ export function Dashboard() {
 
       {/* ===== Main ===== */}
       <Main>
-        {showUpgradeBanner && (
-          <div className='flex items-center justify-between rounded-lg border border-success bg-success/10 px-4 py-3 text-sm text-success mb-4'>
-            <span>Payment successful! Refresh your session to activate full access.</span>
-            <button
-              onClick={handleRefreshSession}
-              className='ml-4 font-medium underline underline-offset-2 hover:no-underline'
-            >
-              Refresh now
-            </button>
-          </div>
-        )}
         <div className='mb-2 flex items-center justify-between space-y-2'>
           <h1 className='text-2xl font-bold tracking-tight'>Dashboard</h1>
         </div>
         <div className='space-y-4'>
           <JobsCard />
-          {PRODUCT_ARCHETYPE === 'report' && <ReportCard />}
           <div className='grid gap-4 sm:grid-cols-3'>
             <Card>
               <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-                <CardTitle className='text-sm font-medium'>Total Records</CardTitle>
+                <CardTitle className='text-sm font-medium'>Total Carriers</CardTitle>
               </CardHeader>
               <CardContent>
                 {isLoading ? (
@@ -154,8 +121,6 @@ export function Dashboard() {
               </CardContent>
             </Card>
           </div>
-          {/* PRODUCT_CUSTOMIZE: remove this card for products where records
-              have no expiration/renewal/deadline dates */}
           <Card>
             <CardHeader>
               <CardTitle>Upcoming Expirations</CardTitle>
