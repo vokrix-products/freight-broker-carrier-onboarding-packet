@@ -46,9 +46,12 @@ export function SignUp() {
   return (
     <div className='flex min-h-svh items-center justify-center p-4'>
       <div className='w-full max-w-sm space-y-6'>
-        <div className='space-y-1 text-center'>
+        <div className='space-y-2 text-center'>
           <h1 className='text-2xl font-semibold'>{(import.meta.env.VITE_PRODUCT_NAME as string) || 'Get started'}</h1>
-          <p className='text-sm text-muted-foreground'>{(import.meta.env.VITE_PRODUCT_DESCRIPTION as string) || 'Free for your first 3 — no credit card needed.'}</p>
+          <p className='text-sm text-muted-foreground'>{(import.meta.env.VITE_PRODUCT_DESCRIPTION as string) || 'Check carrier onboarding packets for missing documents and expired insurance before you book a load.'}</p>
+          <p className='inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium'>
+            Free to use — no credit card required
+          </p>
         </div>
         <Button variant='outline' className='w-full' onClick={handleGoogle} type='button'>
           <svg className='mr-2 h-4 w-4' viewBox='0 0 24 24'>
@@ -70,7 +73,7 @@ export function SignUp() {
           </div>
           {error && <p className='text-sm text-destructive'>{error}</p>}
           <Button type='submit' className='w-full' disabled={loading}>
-            {loading ? 'Sending link...' : 'Start free trial'}
+            {loading ? 'Sending link...' : 'Start free — no card needed'}
           </Button>
         </form>
         <p className='text-center text-sm text-muted-foreground'>
