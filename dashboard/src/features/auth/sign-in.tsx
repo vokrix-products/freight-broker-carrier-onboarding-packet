@@ -72,7 +72,7 @@ export function SignIn() {
         </form>
         <p className='text-center text-sm text-muted-foreground'>
           No account?{' '}
-          <Link to='/sign-up' className='underline'>Start free trial</Link>
+          <Link to='/sign-up' className='underline'>Start free</Link>
         </p>
       </div>
     </div>
