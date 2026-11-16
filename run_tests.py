@@ -1,5 +1,8 @@
+import datetime
 import sys
-from processor import process_file
+
+from processor import _fields_from_text, _status_for, process_file
+
 
 def test_complete():
     csv = (
@@ -12,6 +15,7 @@ def test_complete():
     assert results[0]["title"] == "Best Logistics"
     assert results[0]["due_date"] == "2027-06-15"
 
+
 def test_missing_required():
     csv = (
         b"CarrierName,DOT,MC,InsuranceExpiry,W9,SignedContract\n"
@@ -19,6 +23,7 @@ def test_missing_required():
     )
     results = process_file(csv)
     assert results[0]["status"] == "missing_required:critical"
+
 
 def test_expired():
     csv = (
@@ -28,6 +33,7 @@ def test_expired():
     results = process_file(csv)
     assert results[0]["status"] == "expired:critical"
 
+
 def test_missing_optional():
     csv = (
         b"CarrierName,DOT,MC,InsuranceExpiry,W9,SignedContract\n"
@@ -36,12 +42,61 @@ def test_missing_optional():
     results = process_file(csv)
     assert results[0]["status"] == "missing_optional:warning"
 
+
+# --- PDF text extraction (deterministic, no LLM) ----------------------------
+
+def test_pdf_text_complete():
+    text = (
+        "Carrier Onboarding Packet\n"
+        "Carrier Name: Best Logistics LLC\n"
+        "USDOT Number: 1234567\n"
+        "MC Number: 789012\n"
+        "Insurance Expiry Date: 2027-06-15\n"
+        "W-9 on file. Signed contract received.\n"
+    )
+    details, expiry = _fields_from_text(text)
+    assert details["carrier_name"] == "Best Logistics LLC", details
+    assert details["dot_number"] == "1234567", details
+    assert details["mc_number"] == "MC-789012", details
+    assert details["insurance_expiry_date_iso"] == "2027-06-15", details
+    assert details["has_w9"] is True, details
+    assert details["has_signed_contract"] is True, details
+    assert _status_for(details, expiry, datetime.date(2026, 1, 1)) == "complete:good"
+
+
+def test_pdf_text_expired():
+    text = (
+        "Carrier Name: Old Haulers\n"
+        "DOT 123456\n"
+        "MC-456789\n"
+        "Policy Expiration: 12/31/2020\n"
+        "W9 and signed.\n"
+    )
+    details, expiry = _fields_from_text(text)
+    assert details["dot_number"] == "123456", details
+    assert details["mc_number"] == "MC-456789", details
+    assert expiry == datetime.date(2020, 12, 31), expiry
+    assert _status_for(details, expiry, datetime.date(2026, 1, 1)) == "expired:critical"
+
+
+def test_pdf_text_missing_required():
+    text = "Carrier Name: Slow Haulers\nInsurance Expiry Date: 2026-01-01\n"
+    details, expiry = _fields_from_text(text)
+    assert details["dot_number"] == "", details
+    assert details["mc_number"] == "", details
+    assert details["has_w9"] is False, details
+    assert _status_for(details, expiry, datetime.date(2025, 1, 1)) == "missing_required:critical"
+
+
 def run_tests():
     tests = [
         test_complete,
         test_missing_required,
         test_expired,
-        test_missing_optional
+        test_missing_optional,
+        test_pdf_text_complete,
+        test_pdf_text_expired,
+        test_pdf_text_missing_required,
     ]
     ok = True
     for t in tests:
@@ -52,6 +107,7 @@ def run_tests():
             print(f"FAIL {t.__name__}: {e}")
             ok = False
     sys.exit(0 if ok else 1)
+
 
 if __name__ == "__main__":
     run_tests()
