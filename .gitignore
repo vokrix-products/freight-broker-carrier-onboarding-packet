@@ -1,8 +1,28 @@
-*.csv
-*.json
+# Python
 venv/
+.venv/
+env/
+ENV/
 __pycache__/
 *.pyc
-.env
+*.pyo
+.pytest_cache/
+
+# Node
 node_modules/
+dashboard/node_modules/
+dashboard/dist/
+dist/
+
+# Env / secrets
+.env
+.env.*
 dashboard/.env.local
+
+# Local test data
+*.csv
+*.json
+test_packet.pdf
+
+# OS
+.DS_Store
