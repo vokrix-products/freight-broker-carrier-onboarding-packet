@@ -3,7 +3,8 @@ import datetime
 import io
 import re
 
-import PyPDF2
+from docling.datamodel.base_models import DocumentStream
+from docling.document_converter import DocumentConverter
 
 STATUS_COMPLETE = "complete:good"
 STATUS_MISSING_REQUIRED = "missing_required:critical"
@@ -13,7 +14,7 @@ STATUS_EXPIRED = "expired:critical"
 _TRUE_VALUES = {"yes", "true", "1", "y"}
 
 # --- Deterministic PDF text extraction patterns -----------------------------
-# No LLM: fields are read straight from the PDF text layer with regexes.
+# No LLM: fields are read straight from the extracted PDF text with regexes.
 _ISO_DATE_RE = re.compile(r"\b(\d{4})-(\d{1,2})-(\d{1,2})\b")
 _YMD_SLASH_RE = re.compile(r"\b(\d{4})/(\d{1,2})/(\d{1,2})\b")
 # US packet convention: MM/DD/YYYY. Assumed, not detected.
@@ -37,6 +38,27 @@ _NAME_RE = re.compile(
 )
 _W9_RE = re.compile(r"\bW[\s\-]?9\b", re.IGNORECASE)
 _SIGNED_RE = re.compile(r"\b(?:signed|signature)\b", re.IGNORECASE)
+
+# Docling loads layout/table/OCR models into memory. Build it once per process.
+_converter = None
+
+
+def _converter_instance():
+    global _converter
+    if _converter is None:
+        _converter = DocumentConverter()
+    return _converter
+
+
+def _pdf_to_text(file_bytes: bytes) -> str:
+    """
+    Extract text from PDF bytes with Docling (CPU only, Apache 2.0).
+    Returns markdown, so tables come back as markdown tables and scanned
+    pages are read via Docling's OCR. No LLM.
+    """
+    source = DocumentStream(name="packet.pdf", stream=io.BytesIO(file_bytes))
+    result = _converter_instance().convert(source)
+    return result.document.export_to_markdown()
 
 
 def process_file(file_bytes: bytes) -> list[dict]:
@@ -143,12 +165,7 @@ def _status_for(details: dict, expiry_date, today: datetime.date) -> str:
 
 
 def _process_pdf(file_bytes: bytes) -> list[dict]:
-    reader = PyPDF2.PdfReader(io.BytesIO(file_bytes))
-    full_text = ""
-    for page in reader.pages:
-        page_text = page.extract_text()
-        if page_text:
-            full_text += page_text + "\n"
+    full_text = _pdf_to_text(file_bytes)
 
     details, expiry = _fields_from_text(full_text)
     status = _status_for(details, expiry, datetime.date.today())

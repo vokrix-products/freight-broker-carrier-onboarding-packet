@@ -88,6 +88,12 @@ def test_pdf_text_missing_required():
     assert _status_for(details, expiry, datetime.date(2025, 1, 1)) == "missing_required:critical"
 
 
+def test_docling_importable():
+    # Fails loudly if Docling (or a system lib it needs) is not installed.
+    from docling.document_converter import DocumentConverter
+    assert DocumentConverter is not None
+
+
 def run_tests():
     tests = [
         test_complete,
@@ -97,6 +103,7 @@ def run_tests():
         test_pdf_text_complete,
         test_pdf_text_expired,
         test_pdf_text_missing_required,
+        test_docling_importable,
     ]
     ok = True
     for t in tests:
@@ -105,6 +112,9 @@ def run_tests():
             print(f"PASS {t.__name__}")
         except AssertionError as e:
             print(f"FAIL {t.__name__}: {e}")
+            ok = False
+        except Exception as e:
+            print(f"FAIL {t.__name__}: {type(e).__name__}: {e}")
             ok = False
     sys.exit(0 if ok else 1)
 

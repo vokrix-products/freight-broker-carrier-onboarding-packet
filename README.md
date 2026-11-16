@@ -14,16 +14,16 @@ Backend extraction service for the **SMB Brokerage Tier** product line. It proce
 
 ## Files
 
-- `processor.py` – Core logic. `process_file(file_bytes: bytes) -> list[dict]` reads PDF bytes (PyPDF2 text extraction + DeepSeek JSON evaluation) or CSV bytes (fast local parsing for testing) and returns one dict per carrier with keys `title`, `status`, `details`, `due_date`.
+- `processor.py` – Core logic. `process_file(file_bytes: bytes) -> list[dict]` reads PDF bytes (Docling text + table extraction, OCR for scanned pages) or CSV bytes (fast local parsing for testing) and returns one dict per carrier with keys `title`, `status`, `details`, `due_date`.
 - `run_demo.py` – Hardcoded demo using a CSV input; exits 0 on success.
 - `run_tests.py` – Automated tests covering all four statuses; runs without arguments and exits 0 on success.
-- `requirements.txt` – Python dependencies (`openai`, `requests`, `PyPDF2`).
+- `requirements.txt` – Python dependencies (`requests`, `docling`).
 
 ## Poller Input
 
 The poller feeds raw file bytes directly to `process_file(file_bytes: bytes)`.
 
-**PDF input:** text is extracted with PyPDF2 and sent to DeepSeek, which returns a single JSON object with `title`, `status`, `details`, and `due_date`. Requires `DEEPSEEK_API_KEY`.
+**PDF input:** text is extracted with Docling (Apache 2.0, CPU only) and converted to markdown, so tables come back as markdown tables and scanned pages are read by Docling's OCR. The chosen fields are then read with deterministic regexes. **No LLM is used anywhere in the pipeline.**
 
 **CSV columns (for testing):**
 ```
@@ -50,7 +50,6 @@ Acme Trucking,123456,MC-789012,2026-12-31,Yes,Yes
 
 ```bash
 pip install -r requirements.txt
-export DEEPSEEK_API_KEY="your_key"
 python3 run_tests.py
 python3 run_demo.py
 ```
