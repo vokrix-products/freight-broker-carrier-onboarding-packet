@@ -13,19 +13,19 @@ HEADERS = {
 
 def poll_jobs():
     url = f"{SUPABASE_URL}/rest/v1/jobs?select=*&status=eq.pending&job_type=eq.process_upload&product_id=eq.{PRODUCT_ID}"
-    r = requests.get(url, headers=HEADERS)
+    r = requests.get(url, headers=HEADERS, timeout=30)
     r.raise_for_status()
     return r.json()
 
 def download_file(bucket, path):
     url = f"{SUPABASE_URL}/storage/v1/object/{bucket}/{path}"
-    r = requests.get(url, headers={"Authorization": f"Bearer {SUPABASE_SERVICE_KEY}", "apikey": SUPABASE_SERVICE_KEY})
+    r = requests.get(url, headers={"Authorization": f"Bearer {SUPABASE_SERVICE_KEY}", "apikey": SUPABASE_SERVICE_KEY}, timeout=120)
     r.raise_for_status()
     return r.content
 
 def upload_file(bucket, path, data):
     url = f"{SUPABASE_URL}/storage/v1/object/{bucket}/{path}"
-    r = requests.put(url, headers={"Authorization": f"Bearer {SUPABASE_SERVICE_KEY}", "apikey": SUPABASE_SERVICE_KEY}, data=data)
+    r = requests.put(url, headers={"Authorization": f"Bearer {SUPABASE_SERVICE_KEY}", "apikey": SUPABASE_SERVICE_KEY}, data=data, timeout=120)
     r.raise_for_status()
 
 def update_job(job_id, status, result_summary=None, output_file_path=None):
@@ -37,20 +37,28 @@ def update_job(job_id, status, result_summary=None, output_file_path=None):
         payload["output_file_path"] = output_file_path
     if status in ("completed", "failed"):
         payload["completed_at"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
-    r = requests.patch(url, headers=HEADERS, json=payload)
+    r = requests.patch(url, headers=HEADERS, json=payload, timeout=30)
     r.raise_for_status()
 
 def write_records(records):
     url = f"{SUPABASE_URL}/rest/v1/records"
-    r = requests.post(url, headers=HEADERS, json=records)
+    r = requests.post(url, headers=HEADERS, json=records, timeout=60)
     r.raise_for_status()
 
 from processor import process_file
 
+# A network blip used to raise straight out of the loop and kill the container,
+# which then crash-looped. Poll failures are now logged and retried instead.
 while True:
-    jobs = poll_jobs()
+    try:
+        jobs = poll_jobs()
+    except Exception as e:
+        print(f"poll failed: {e}", flush=True)
+        time.sleep(30)
+        continue
+
     if jobs:
-        print(f"Processing {len(jobs)} job(s)")
+        print(f"Processing {len(jobs)} job(s)", flush=True)
         for job in jobs:
             try:
                 # download input file
@@ -77,6 +85,9 @@ while True:
                     write_records(records)
                 update_job(job["id"], "completed", result_summary=f"{len(records)} records processed", output_file_path=output_path)
             except Exception as e:
-                print(f"Job {job['id']} failed: {e}")
-                update_job(job["id"], "failed", result_summary=str(e))
+                print(f"Job {job['id']} failed: {e}", flush=True)
+                try:
+                    update_job(job["id"], "failed", result_summary=str(e))
+                except Exception as e2:
+                    print(f"Could not mark job {job['id']} failed: {e2}", flush=True)
     time.sleep(60)

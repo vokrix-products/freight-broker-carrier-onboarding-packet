@@ -33,7 +33,16 @@ _MC_RE = re.compile(
     r"\bMC\s*(?:#|No\.?|Number)?\s*[:\-]?\s*(\d{5,8})\b", re.IGNORECASE
 )
 _NAME_RE = re.compile(
-    r"(?:carrier|company|legal|business)\s+name\s*[:\-]\s*([^\n\r]{2,80})",
+    r"(?:carrier|company|legal|business)\s+name\s*[:\-]\s*([^\n\r]{2,120})",
+    re.IGNORECASE,
+)
+# Extracted PDF text frequently puts every field on one line, e.g.
+# "Carrier Name: Apex Logistics LLC DOT Number: 123456 MC Number: MC-789012".
+# Cut the name at the next field label so it never swallows the rest of the line.
+_NAME_STOP_RE = re.compile(
+    r"\b(?:USDOT|US\s+DOT|DOT|EIN|FEIN|Tax\s*ID|Taxpayer|Address|Phone|Fax"
+    r"|Email|Contact|Insurance|Policy|Certificate|W[\s\-]?9|Signed|Signature)\b"
+    r"|\bMC\s*(?:#|No\.?|Number)",
     re.IGNORECASE,
 )
 _W9_RE = re.compile(r"\bW[\s\-]?9\b", re.IGNORECASE)
@@ -121,6 +130,14 @@ def _extract_expiry(text: str):
     return None
 
 
+def _clean_name(raw: str) -> str:
+    """Trim a captured name at the next field label and strip separators."""
+    stop = _NAME_STOP_RE.search(raw)
+    if stop:
+        raw = raw[:stop.start()]
+    return raw.strip(" -:,;|")
+
+
 def _fields_from_text(text: str):
     """
     Deterministically extract carrier fields from PDF text.
@@ -135,7 +152,7 @@ def _fields_from_text(text: str):
     expiry = _extract_expiry(text)
 
     details = {
-        "carrier_name": name_match.group(1).strip() if name_match else "",
+        "carrier_name": _clean_name(name_match.group(1)) if name_match else "",
         "dot_number": dot_match.group(1) if dot_match else "",
         "mc_number": f"MC-{mc_match.group(1)}" if mc_match else "",
         "insurance_expiry_date_iso": expiry.isoformat() if expiry else None,
