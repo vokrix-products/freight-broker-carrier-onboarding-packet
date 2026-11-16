@@ -88,6 +88,22 @@ def test_pdf_text_missing_required():
     assert _status_for(details, expiry, datetime.date(2025, 1, 1)) == "missing_required:critical"
 
 
+def test_pdf_text_runon_line():
+    # Regression: Docling can return every field on one line, which used to
+    # swallow "DOT Number: ... MC Number: ..." into the carrier name.
+    text = (
+        "Carrier Name: Apex Logistics LLC DOT Number: 123456 "
+        "MC Number: MC-789012 EIN / Tax ID: 47-1234 "
+        "Insurance Expiry Date: 2027-06-30 W-9 on file. Signed contract received."
+    )
+    details, expiry = _fields_from_text(text)
+    assert details["carrier_name"] == "Apex Logistics LLC", details
+    assert details["dot_number"] == "123456", details
+    assert details["mc_number"] == "MC-789012", details
+    assert details["insurance_expiry_date_iso"] == "2027-06-30", details
+    assert _status_for(details, expiry, datetime.date(2026, 1, 1)) == "complete:good"
+
+
 def test_docling_importable():
     # Fails loudly if Docling (or a system lib it needs) is not installed.
     from docling.document_converter import DocumentConverter
@@ -103,6 +119,7 @@ def run_tests():
         test_pdf_text_complete,
         test_pdf_text_expired,
         test_pdf_text_missing_required,
+        test_pdf_text_runon_line,
         test_docling_importable,
     ]
     ok = True
