@@ -1,4 +1,4 @@
-import os, time, json, requests, sys
+import os, time, json, socket, requests, sys
 sys.path.insert(0, 'backend')
 
 SUPABASE_URL = os.environ["SUPABASE_URL"]
@@ -10,6 +10,19 @@ HEADERS = {
     "Authorization": f"Bearer {SUPABASE_SERVICE_KEY}",
     "Content-Type": "application/json"
 }
+
+# Printed once at boot so the logs answer "is this container's DNS working"
+# and "which product am I polling" without guessing.
+def _startup_diagnostics():
+    host = SUPABASE_URL.split("//")[-1].split("/")[0]
+    try:
+        ip = socket.gethostbyname(host)
+        print(f"startup: resolved {host} -> {ip}", flush=True)
+    except Exception as e:
+        print(f"startup: DNS FAILED for {host}: {e}", flush=True)
+    print(f"startup: product_id={PRODUCT_ID} host={host} code=poller-a3740eb+", flush=True)
+
+_startup_diagnostics()
 
 def poll_jobs():
     url = f"{SUPABASE_URL}/rest/v1/jobs?select=*&status=eq.pending&job_type=eq.process_upload&product_id=eq.{PRODUCT_ID}"
